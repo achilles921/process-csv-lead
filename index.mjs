@@ -5,11 +5,20 @@ import { getLead } from './converts.mjs';
 
 const s3 = new S3Client({ region: 'us-east-2' }); // Adjust region as needed
 
+const processedKeys = new Set();
+
 export const handler = async (event) => {
   console.log('Event:', JSON.stringify(event, null, 2));
 
   const bucket = event.Records[0].s3.bucket.name;
   const key = decodeURIComponent(event.Records[0].s3.object.key.replace(/\+/g, ' '));
+
+  if (processedKeys.has(key)) {
+    console.log(`Already processed ${key}, skipping.`);
+    return;
+  }
+
+  processedKeys.add(key);
 
   const results = [];
 
@@ -27,14 +36,17 @@ export const handler = async (event) => {
     });
 
     console.log('Parsed rows:', results.length);
-    results.forEach(async row => {
+    for (const row of results) {
       console.log(`Lead: ${row['First Name']} ${row['Last Name']} - ${row.Email} - ${row.Phone} - ${row.Quote}`);
       const email = row['Email'];
       const phone = row['Phone'];
+
+      if (row['Phone'] === 'Phone')
+        return;
       
       if (!email && !phone) {
         console.log('No phone or email available on this row');
-        return true;
+        return;
       }
 
       const leadData = await getLead(email, phone);
@@ -42,9 +54,9 @@ export const handler = async (event) => {
 
       if (!leadData) {
         console.log('No lead found');
-        return true;
+        return;
       }
-    });
+    }
 
     return { statusCode: 200, body: 'CSV processed successfully.' };
 

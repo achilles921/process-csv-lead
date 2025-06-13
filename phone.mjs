@@ -1,7 +1,7 @@
-import { parsePhoneNumber } from 'libphonenumber-js'
+import { parsePhoneNumberFromString } from 'libphonenumber-js'
 
 export async function validateAndFormatPhone(phone) {
-    const phoneNumber = parsePhoneNumber(phone, 'US')
+    const phoneNumber = parsePhoneNumberFromString(phone, 'US')
 
     //if valid - format it to e164, if not return false
     if (phoneNumber) {
