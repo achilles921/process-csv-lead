@@ -60,7 +60,7 @@ export async function getLead(email, phone) {
             "lead_status": "unique",
             "start_date": startDate,
             "email_address": email,
-            "profile_id": 128093
+            "profile_id": process.env.PROFILE_ID
         };
         
         //append the query parameters

@@ -15,7 +15,7 @@ export const handler = async (event) => {
 
   if (processedKeys.has(key)) {
     console.log(`Already processed ${key}, skipping.`);
-    return;
+    return { statusCode: 500, body: 'Handled error' }; 
   }
 
   processedKeys.add(key);
@@ -42,11 +42,11 @@ export const handler = async (event) => {
       const phone = row['Phone'];
 
       if (row['Phone'] === 'Phone')
-        return;
+        continue;
       
       if (!email && !phone) {
         console.log('No phone or email available on this row');
-        return;
+        continue;
       }
 
       const leadData = await getLead(email, phone);
@@ -54,15 +54,14 @@ export const handler = async (event) => {
 
       if (!leadData) {
         console.log('No lead found');
-        return;
       }
     }
 
     return { statusCode: 200, body: 'CSV processed successfully.' };
 
   } catch (error) {
-    console.error('Error processing CSV:', error);
-    throw new Error('Failed to process file');
+    console.log('Error processing CSV:', error);
+    return { statusCode: 500, body: 'Handled error' }; 
   }
 
 }
