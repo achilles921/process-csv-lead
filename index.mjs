@@ -1,6 +1,7 @@
 import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import csvParser from 'csv-parser';
 import { Readable } from 'stream';
+import { getLead } from './converts.mjs';
 
 const s3 = new S3Client({ region: 'us-east-2' }); // Adjust region as needed
 
@@ -19,15 +20,30 @@ export const handler = async (event) => {
 
     await new Promise((resolve, reject) => {
       Readable.from(stream)
-        .pipe(csvParser(['First Name', 'Last Name', 'Email', 'Phone', 'Quote']))
+        .pipe(csvParser(['Quote', 'First Name', 'Last Name', 'Email', 'Phone']))
         .on('data', (data) => results.push(data))
         .on('end', resolve)
         .on('error', reject);
     });
 
     console.log('Parsed rows:', results.length);
-    results.forEach(row => {
-      console.log(`Lead: ${row['First Name']} ${row['Last Name']} - ${row.Email}`);
+    results.forEach(async row => {
+      console.log(`Lead: ${row['First Name']} ${row['Last Name']} - ${row.Email} - ${row.Phone} - ${row.Quote}`);
+      const email = row['Email'];
+      const phone = row['Phone'];
+      
+      if (!email && !phone) {
+        console.log('No phone or email available on this row');
+        return true;
+      }
+
+      const leadData = await getLead(email, phone);
+      console.log('get lead data response: ', leadData);
+
+      if (!leadData) {
+        console.log('No lead found');
+        return true;
+      }
     });
 
     return { statusCode: 200, body: 'CSV processed successfully.' };
@@ -35,15 +51,6 @@ export const handler = async (event) => {
   } catch (error) {
     console.error('Error processing CSV:', error);
     throw new Error('Failed to process file');
-  }
-
-
-  const leadData = await getLead(email, phone);
-  console.log('get lead data response: ', leadData);
-
-  if (!leadData) {
-    console.log('No lead found');
-    return true;
   }
 
 }
