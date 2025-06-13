@@ -40,6 +40,7 @@ export const handler = async (event) => {
       console.log(`Lead: ${row['First Name']} ${row['Last Name']} - ${row.Email} - ${row.Phone} - ${row.Quote}`);
       const email = row['Email'];
       const phone = row['Phone'];
+      const quote = row['Quote'];
 
       if (row['Phone'] === 'Phone')
         continue;
@@ -54,6 +55,21 @@ export const handler = async (event) => {
 
       if (!leadData) {
         console.log('No lead found');
+        continue;
+      }
+
+      const leadId = leadData.lead_id;
+      const parsed = parseFloat(quote.replace(/[^0-9.-]+/g, ''));
+      if (leadData.quote_value) {
+        // sheet is higher, replace
+        if (parsed > leadData.quote_value) {
+          const updateLeadData = await updateQuoteValue(leadId, parsed);
+          console.log('update lead response: ', updateLeadData);
+        }
+      } else {
+        // Update lead quote value from csv
+        const updateLeadData = await updateQuoteValue(leadId, parsed);
+        console.log('update lead response: ', updateLeadData);
       }
     }
 
